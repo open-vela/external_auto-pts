@@ -345,6 +345,46 @@ def verify_multiple_read_description(description):
     return True
 
 
+def parse_passkey_description(description):
+    """A function to parse passkey from description
+
+    PTS MMI description.
+
+    Returns passkey if successful, None if not.
+
+    description -- MMI description
+    """
+    logging.debug("description=%r", description)
+
+    match = re.search(r"\b[0-9]+\b", description)
+    if match:
+        pk = match.group(0)
+        logging.debug("passkey=%r", pk)
+        return int(pk)
+
+    return None
+
+
+def parse_handle_description(description):
+    """A function to parse handle from description
+
+    PTS MMI description.
+
+    Returns passkey if successful, None if not.
+
+    description -- MMI description
+    """
+    logging.debug("description=%r", description)
+
+    match = re.search(r"\bhandle \b([0-9A-Fa-f]+)\b", description)
+    if match:
+        handle = match.group(1)
+        logging.debug("handle=%r", handle)
+        return int(handle)
+
+    return None
+
+
 def btp_hdr_check(rcv_hdr, exp_svc_id, exp_op=None):
     if rcv_hdr.svc_id != exp_svc_id:
         raise BTPError("Incorrect service ID %s in the response, expected %s!"
@@ -720,7 +760,11 @@ def gap_unpair(bd_addr=None, bd_addr_type=None):
 
 
 def var_store_get_passkey(description):
-    return str(get_stack().gap.get_passkey())
+    pk = get_stack().gap.get_passkey()
+    if pk:
+        return str(pk).zfill(6)
+    else:
+        return '000000'
 
 
 def var_store_get_wrong_passkey(description):
@@ -789,9 +833,10 @@ def gap_passkey_entry_req_ev(bd_addr=None, bd_addr_type=None):
     if _addr_type != bd_addr_type or _addr != bd_addr:
         raise BTPError("Received data mismatch")
 
-    # Generate some passkey
     stack = get_stack()
-    stack.gap.passkey.data = randint(0, 999999)
+    if not stack.gap.passkey.data:
+        # Generate some passkey
+        stack.gap.passkey.data = randint(0, 999999)
 
     gap_passkey_entry_rsp(bd_addr, bd_addr_type, stack.gap.passkey.data)
 
