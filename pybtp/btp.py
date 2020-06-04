@@ -2633,11 +2633,7 @@ def gattc_read_uuid_rsp(store_rsp=False, store_val=False):
             VERIFY_VALUES.append(att_rsp_str[rsp])
 
         if store_val:
-            n = len(value[0])
-            value = (binascii.hexlify(value[0])).upper()
-            if value != '':
-                chunks = [value[i:i+len(value)/n] for i in range(0, len(value), len(value)/n)]
-                VERIFY_VALUES.extend(chunks)
+            VERIFY_VALUES.append((binascii.hexlify(value[0])).upper())
 
 
 def gattc_read_long_rsp(store_rsp=False, store_val=False):
