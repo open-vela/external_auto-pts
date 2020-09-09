@@ -18,6 +18,7 @@ import os
 import logging
 import shlex
 import serial
+import time
 
 from pybtp import defs
 from pybtp.types import BTPError
@@ -182,13 +183,15 @@ class Board:
     c1000 = "c1000"
     nrf52 = "nrf52"
     reel  = "reel_board"
+    sim   = "sim"
 
     # for command line options
     names = [
         arduino_101,
         c1000,
         nrf52,
-        reel
+        reel,
+        sim,
     ]
 
     def __init__(self, board_name, kernel_image, tty_file):
@@ -217,6 +220,22 @@ class Board:
         if reset_process.wait():
             logging.error("openocd reset failed")
 
+        if self.name == 'sim' :
+            command = ('rm -rf zblue.bin')
+            subprocess.call(command, shell=True)
+
+            command = ('cat %s' % self.tty_file)
+            subprocess.call(command, shell=True)
+
+            command = ('for i in `ps a | grep %s | grep -vE "autoptsclient|grep" | cut -d\' \' -f 1`;do sudo kill -9 $i;done' % self.kernel_image)
+
+            subprocess.call(command, shell=True)
+            time.sleep(2)
+
+            command = ('sudo %s' % self.kernel_image)
+
+            subprocess.Popen(command, shell=True, stdout=IUT_LOG_FO, stderr=IUT_LOG_FO)
+
     def get_openocd_reset_cmd(self, openocd_bin, openocd_scripts, openocd_cfg):
         """Compute openocd reset command"""
         if not os.path.isfile(openocd_bin):
@@ -240,7 +259,8 @@ class Board:
             self.arduino_101: self._get_reset_cmd_arduino_101,
             self.c1000: self._get_reset_cmd_c1000,
             self.nrf52: self._get_reset_cmd_nrf52,
-            self.reel: self._get_reset_cmd_reel
+            self.reel: self._get_reset_cmd_reel,
+            self.sim: self._get_reset_cmd_sim
         }
 
         reset_cmd_getter = reset_cmd_getters[self.name]
@@ -294,6 +314,9 @@ class Board:
 
         """
         return 'pyocd cmd -c reset'
+
+    def _get_reset_cmd_sim(self):
+        return 'echo eeff000000 | xxd -r -ps > %s, self.tty_file'
 
 def get_iut():
     return ZEPHYR
