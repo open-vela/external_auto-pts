@@ -91,9 +91,6 @@ def parse_args():
 
 def main():
     """Main."""
-    if os.geteuid() == 0:  # root privileges are not needed
-        sys.exit("Please do not run this program as root.")
-
     args = parse_args()
 
     if args.store:
