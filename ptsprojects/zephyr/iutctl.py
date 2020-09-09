@@ -204,6 +204,10 @@ class Board:
         self.tty_file = tty_file
         self.reset_cmd = self.get_reset_cmd()
 
+        if self.name == 'sim' :
+            command = ('sudo %s' % self.kernel_image)
+            subprocess.Popen(command, shell=True, stdout=IUT_LOG_FO, stderr=IUT_LOG_FO)
+
     def reset(self):
         """Reset HW DUT board with openocd
 
